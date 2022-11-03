@@ -8,7 +8,7 @@ from tkinter import *
 from tkinter import filedialog as fd
 import pandas as pd
 import numpy as np
-from classes.Excellerator import Excellerator
+from classes.Excellerator2 import Excellerator2
 from classes.Simulator import Simulator
 import time
 
@@ -133,7 +133,7 @@ class tkGui(tk.Tk):
             print(f"            Slot Machine geting passed: {input_filepath}, {bet}, {initial_credits}, {self.debug_level.get()} and inf checked? {self.infinite_checked.get()}")
         #self.sm = SlotMachine(input_filepath, bet, initial_credits, self.debug_level.get(), self.infinite_checked.get())
         # the slot machine constructor - even though it uses new algorithms, may as well keep the instance name, as it's littered through the code. 
-        self.sm = Excellerator(input_filepath, bet, initial_credits, self.debug_level.get(), self.infinite_checked.get())
+        self.sm = Excellerator2(input_filepath, bet, initial_credits, self.debug_level.get(), self.infinite_checked.get())
         self.slot_ready = True
         self.status_box.set("[2. Slot Built - Credits Loaded]")
         self.payline_number.set(self.sm.paylines)
