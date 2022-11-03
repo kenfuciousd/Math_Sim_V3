@@ -25,9 +25,9 @@ class Excellerator2():
                print(f"index: '{idx}' and \n row '{item['value']}' .. \n")
 
         # this section is to define where we get our theoretical/pre-calculated values from.. 
-        self.rtp_sheetname = 'Win Lines'   # it doesn't like 'Ways/Pays' in excel
-        self.vi_sheetname = 'RTP'
-        self.rtp_column = 'Total RTP'
+        self.rtp_sheetname = 'Math Values'   # it doesn't like 'Ways/Pays' in excel
+        self.vi_sheetname = 'Math Values'
+        self.rtp_column = 'RTP'
         self.vi_column = 'Volatility'
         #self.columns = ['Win Lines', 'Weight', 'Lower Range', 'Upper Range']
         self.columns="A:D"  # the above column names.
@@ -87,6 +87,13 @@ class Excellerator2():
         self.pays_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)
         self.pays_sheet1.columns = self.pays_sheet1.columns.str.strip()
         sheet_count += 1
+        # set the math
+        # set the RTP
+        self.rtp_data = pd.read_excel(self.input_filepath, sheet_name=self.rtp_sheetname, header=0)
+        self.vi_data = pd.read_excel(self.input_filepath, sheet_name=self.vi_sheetname, header=0)
+        # this is where the data is pulled from the columns on the rtp sheet
+        self.rtp = self.rtp_data[self.rtp_column][0] * 100 ## times 100 so that we have the percentage that matches the data
+        self.vi = self.vi_data[self.vi_column][0]
         self.mean_pay = 0
         # now calculate mean_pay
         for idx, line in self.pays_sheet1.iterrows():
@@ -176,6 +183,7 @@ class Excellerator2():
         if(self.win_toggle == 1):
             self.adjust_credits(self.round_win)
             self.hit_total += 1
+            self.bonus_hit_count += 1
             self.win_toggle = 0    
             if(self.round_win > self.maximum_liability):
                 self.maximum_liability = self.round_win
@@ -230,7 +238,8 @@ class Excellerator2():
                                             self.win_toggle = 1                                            
                 else:
                     sn = i+1
-                    print(f"   !!! Calling Bonus Game '{row[0]}' at row {sn} on the Trigger sheet !!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    if(self.debug_level >= 1):
+                        print(f"   Bonus Game '{row[0]}' at row {sn} !!!!!!!!!!!!")
                     # using i+1 because it counts up from zero programatically, and the sheets are referenced starting at 1.
                     toPass = []
                     # this is a concession to the fact that I spent way too long trying to get this dynamic info through

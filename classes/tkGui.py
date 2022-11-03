@@ -54,6 +54,7 @@ class tkGui(tk.Tk):
         self.found_volatility = DoubleVar(self, value = 0)
         self.found_return_to_player = DoubleVar(self, value = 0)
         self.bonus_hit_percentage = DoubleVar(self, value = 0)
+        self.bonus_hit_count = DoubleVar(self, value = 0)
         self.plot_toggle = 0
         # finally for init, create the gui itself, calling the function
         self.create_gui()
@@ -167,11 +168,13 @@ class tkGui(tk.Tk):
             #volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ) ) * 1.96
             volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1) ) ) ) * 1.96   #(removed the +1 required by the function, as the length inclides the zero line, an additional 1
             self.volatility.set(round(volatilitymath, 2))
-
             #found volatility from the spreadsheet
             ##### uncomment if we use volatility from the sheet ######
             #####self.found_volatility.set( round(self.sm.vi, 2) )
-            self.found_volatility.set("N/A")
+            try:
+                self.found_volatility.set(round(self.sm.vi, 2))
+            except NameError:
+                self.found_volatility.set("N/A")
 
             # RTP
             if(self.debug_level.get() >= 1):
@@ -190,6 +193,7 @@ class tkGui(tk.Tk):
             run_time = np.round(end_time - start_time, 2) 
             mrt = np.round(run_time / 60 ,2) 
             bhp = np.round(self.sm.bonus_hit_count / self.sim.spins[len(self.sim.spins)-1], 4) 
+            self.bonus_hit_count.set( str(self.sm.bonus_hit_count) )
             self.bonus_hit_percentage.set( str(bhp) + "%")
             self.status_box.set("[3. Done - Click 2 to Rebuild Slot, or Reload Credits]") # setting status 
             print(f"Simulation Complete, total run time in seconds: {run_time}, approximately {mrt} minutes, played {self.sim.spins[-1]} spins.")
@@ -375,6 +379,10 @@ class tkGui(tk.Tk):
         self.calc_rtp_entry = ttk.Entry(self, width = 8, textvariable = self.found_return_to_player, state='readonly')
         self.calc_rtp_entry.grid(row = gui_row_iteration, column = 3)        
         gui_row_iteration += 1
+        self.bhp_label = tk.Label(self, width = 14, text="Bonus Hit Count")
+        self.bhp_label.grid(row = gui_row_iteration, column = 0, sticky=E)
+        self.bhp_entry = ttk.Entry(self, width = 8, textvariable = self.bonus_hit_count, state='readonly')
+        self.bhp_entry.grid(row = gui_row_iteration, column = 1) 
         self.bhp_label = tk.Label(self, width = 14, text="Bonus Hit Percentage")
         self.bhp_label.grid(row = gui_row_iteration, column = 2, sticky=E)
         self.bhp_entry = ttk.Entry(self, width = 8, textvariable = self.bonus_hit_percentage, state='readonly')
