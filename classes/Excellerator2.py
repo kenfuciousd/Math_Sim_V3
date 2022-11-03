@@ -43,12 +43,11 @@ class Excellerator2():
         self.volitility = float(0)
         self.mean_pay = 0
         self.summation = 0
-        #for betting
-        self.this_bet = bet * self.paylines
         self.this_win = 0    # value to be returned for tracking
         self.round_win = 0
         self.total_won = 0
-        self.total_bet = 0 
+        self.total_bet = 0
+        self.win_toggle = 0 
         #if(self.debug_level >= 2):
         #    print(f"        = Total bet is being set and is {self.total_bet}")
         self.rtp = 0
@@ -65,20 +64,27 @@ class Excellerator2():
         # LOAD - Access the excel file
         self.load_excel()        
         # for each set, table 1 would be #spins, table 2 is paylines, table 3 is win values
+        # for example, after the excel file is loaded, we should be able to directly call the first three tables, always
+        self.paylines = len(self.lines_sheet1) - 1 # -1 becuase we aren't counting the 0 line
+        #for betting
+        self.this_bet = bet * self.paylines
 
-    def load_excel():
+
+    def load_excel(self):
         """ takes in the excel file, and performs the setup logic""" 
         excel_file = pd.ExcelFile(self.input_filepath)
+        if(self.debug_level >= 1):
+            print(f"Loading Excel sheet, found: {excel_file.sheet_names}")
         sheet_count = 0
-        self.spin_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns)
+        self.spin_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)
         self.spin_sheet1.columns = self.spin_sheet1.columns.str.strip()
         sheet_count += 1
-        games_total = len(spin_sheet1)  # this is how many bonus games we have
+        games_total = len(self.spin_sheet1)  # this is how many bonus games we have
         #print(f"found {games_total} total games!")
-        self.lines_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns)
+        self.lines_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)
         self.lines_sheet1.columns = self.lines_sheet1.columns.str.strip()
         sheet_count += 1
-        self.pays_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns)
+        self.pays_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)
         self.pays_sheet1.columns = self.pays_sheet1.columns.str.strip()
         sheet_count += 1
         self.mean_pay = 0
@@ -92,18 +98,19 @@ class Excellerator2():
             print(f"        $!MATH$! Paytable Mean Pay is {self.mean_pay}")        
         # now dynamically build the bonus games
         for i in range(2, games_total+1):
-            print(f"Loading Bonus Game sheet {i} at sheet_count {sheet_count}")
-            exec("self.spin_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns)" % i)
+            if(self.debug_level >= 2):
+                print(f"    Loading Bonus Game sheet {i} at sheet_count {sheet_count}")
+            exec("self.spin_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)" % i)
             exec("self.spin_sheet%d.columns = self.spin_sheet%d.columns.str.strip()" % (i, i))
             #print(f'SPIN SHEET {i}:')
             #exec("print(f'{spin_sheet%d}')" % i)
             sheet_count += 1
-            exec("self.lines_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns)" % i)
+            exec("self.lines_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)" % i)
             exec("self.lines_sheet%d.columns = self.lines_sheet%d.columns.str.strip()" % (i, i))
             #print(f"LINES SHEET {i}:")
             #exec("print(f'{lines_sheet%d}')" % i)
             sheet_count += 1
-            exec("self.pays_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns)" % i)
+            exec("self.pays_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)" % i)
             exec("self.pays_sheet%d.columns = self.pays_sheet%d.columns.str.strip()" % (i, i))
             #print(f"PAYS SHEET {i}:")
             #exec("print(f'{pays_sheet%d}')" % i)
@@ -136,30 +143,47 @@ class Excellerator2():
         #print(f"{lines_sheet}")
         #print(f"{pays_sheet}")
         random = rd.randrange(0, int(spin_sheet[-1:]['Upper Range']))
-        print(f"   Bonus Spins: random: {random}")      
-        for i, row in spin_sheet.iterrows():
-            #print(f" -- spin check in bonus: checking row {i} with info {row}")
-            if(random >= row["Lower Range"] and random <= row["Upper Range"]):
-                spins = row[0]
-                print(f"      Found {spins} Bonus spins")
+        if(self.debug_level >= 1):
+            print(f"   Bonus Spins, random: {random}")      
+        for s, srow in spin_sheet.iterrows():
+            #print(f" -- spin check in bonus: checking row {s} with info {srow}")
+            if(random >= srow["Lower Range"] and random <= srow["Upper Range"]):
+                spins = int(srow[0])
+                if(self.debug_level >= 1):
+                    print(f"      Found {spins} Bonus spins")
                 if(spins>0):
                     for j in range(0, spins):
                         random = rd.randrange(0, int(lines_sheet[-1:]['Upper Range']))
-                        print(f"      Bonus Lines: at spin {j} random: {random}")
+                        if(self.debug_level >= 1):
+                            print(f"      Bonus Lines: at spin {j} random: {random}")
                         for l, lrow in lines_sheet.iterrows():
                           #print(f" -- lines check in bonus: checking {l} with info {lrow}")
                             if(random >= lrow["Lower Range"] and random <= lrow["Upper Range"]):
-                                print(f"         Bonus Chose {lrow[0]} Line Wins")
+                                if(self.debug_level >= 1):
+                                    print(f"         Bonus Chose {lrow[0]} Line Wins")
                                 if(lrow[0] > 0):
                                     for lines in range(0, lrow[0]):  
                                         random = rd.randrange(0, int(pays_sheet[-1:]['Upper Range']))
-                                        print(f"            Bonus Wins random: {random}")
+                                        if(self.debug_level >= 1):
+                                            print(f"            Bonus Wins random: {random}")
                                         for bw, bwrow in pays_sheet.iterrows():
                                             if(random >= bwrow["Lower Range"] and random <= bwrow["Upper Range"]):
-                                                print(f"               Bonus Winner! would add {bwrow[0]} to the total, found between {bwrow['Lower Range']} and {bwrow['Upper Range']}")
-                                            self.this_win = bwrow[0] * self.bet_per_line 
-                                            self.round_win += self.this_win
-                                            self.win_toggle = 1 
+                                                if(self.debug_level >= 1):
+                                                    print(f"               Bonus Winner! would add {bwrow[0]} to the total, found between {bwrow['Lower Range']} and {bwrow['Upper Range']}")
+                                                self.this_win = bwrow[0] * self.bet_per_line 
+                                                self.round_win += self.this_win
+                                                self.win_toggle = 1 
+        if(self.win_toggle == 1):
+            self.adjust_credits(self.round_win)
+            self.hit_total += 1
+            self.win_toggle = 0    
+            if(self.round_win > self.maximum_liability):
+                self.maximum_liability = self.round_win
+            # reminder to check mean_pay - do we sum the bonus tables too? 
+            self.summation += (self.mean_pay - self.round_win ) ** 2
+            if(self.debug_level >= 2):
+                print(f"    +=+=+=+= summation is now {self.summation}, which added: ({self.mean_pay} minus {self.round_win}) squared. ")
+
     def play_game(self):
        # The "Game Spins".. if this were a slot, it would be the "play game" button. Will use spin_sheet1, lines_sheet1, and pays_sheet1
         self.this_win = 0  # the 'running total'
@@ -169,11 +193,10 @@ class Excellerator2():
         self.adjust_credits(self.this_bet * -1)
         if(self.debug_level >= 3):
             print(f"            checking credits: {self.game_credits}  <  {str(this_bet)}")
-
-       # random number vs spin table.   ## set upper range as a variable, so we don't have to keep calling the data structure? 
+        # random number vs spin table.   ## set upper range as a variable, so we don't have to keep calling the data structure? 
         random = rd.randrange(0, int(self.spin_sheet1[-1:]['Upper Range']))
         if(self.debug_level >= 1):
-                print(f"Main Game Initial Bonus Trigger, randomly chosen, for the spin: {random}")
+            print(f"Main Game Initial Bonus Trigger, randomly number for the spin: {random}")
         for i, row in self.spin_sheet1.iterrows():
             if(random >= row["Lower Range"] and random <= row["Upper Range"]):
                 if(self.debug_level >= 1):
@@ -205,18 +228,16 @@ class Excellerator2():
                                             self.this_win = wrow[0] * self.bet_per_line 
                                             self.round_win += self.this_win
                                             self.win_toggle = 1                                            
-            else:
-                sn = i+1
-                print(f"!!! Calling Bonus Game '{row[0]}' at row {sn} on the Trigger sheet !!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                # using i+1 because it counts up from zero programatically, and the sheets are referenced starting at 1.
-                toPass = []
-                #exec("print(f' Trying: spin_sheet = spin_sheet%d')" % sn)
-                exec("toPass.append(spin_sheet%d)" % sn)
-                #exec("print(f' Trying: lines_sheet = lines_sheet%d')" % sn)   
-                exec("toPass.append(lines_sheet%d)" % sn)
-                #exec("print(f' Trying: pays_sheet = pays_sheet%d')" % sn)
-                exec("toPass.append(pays_sheet%d)" % sn)
-                bonus_game(toPass[0], toPass[1], toPass[2])
+                else:
+                    sn = i+1
+                    print(f"   !!! Calling Bonus Game '{row[0]}' at row {sn} on the Trigger sheet !!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    # using i+1 because it counts up from zero programatically, and the sheets are referenced starting at 1.
+                    toPass = []
+                    # this is a concession to the fact that I spent way too long trying to get this dynamic info through
+                    exec("toPass.append(self.spin_sheet%d)" % sn)
+                    exec("toPass.append(self.lines_sheet%d)" % sn)
+                    exec("toPass.append(self.pays_sheet%d)" % sn)
+                    self.bonus_game(toPass[0], toPass[1], toPass[2])
         if(self.debug_level >= 2):
             print(f"        $$$$ ++++ TOTAL win this round: {self.round_win}, with a total simulator win of {self.total_won}")
         # Then, if it was a win, do the math

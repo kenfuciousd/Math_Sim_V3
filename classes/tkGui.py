@@ -162,8 +162,10 @@ class tkGui(tk.Tk):
             
             #### volatility goes here. ### 
             if(self.debug_level.get() >= 1):
-                print(f"    ^^^^ the volatility math: {self.sm.summation} / {self.simruns.get() * (len(self.sm.paytable) + 1)} = {self.sm.summation/(self.simruns.get() * (len(self.sm.paytable) + 1))}.. sqrt is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ))}, and so with * 1.96 the volatility index is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) )) * 1.96} ")
-            volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ) ) * 1.96
+                #print(f"    ^^^^ the volatility math: {self.sm.summation} / {self.simruns.get() * (len(self.sm.paytable) + 1)} = {self.sm.summation/(self.simruns.get() * (len(self.sm.paytable) + 1))}.. sqrt is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ))}, and so with * 1.96 the volatility index is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) )) * 1.96} ")
+                print(f"    ^^^^ the volatility math: {self.sm.summation} / {self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1)} = {self.sm.summation/(self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1))}.. sqrt is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1) ))}, and so with * 1.96 the volatility index is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1) )) * 1.96} ")
+            #volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ) ) * 1.96
+            volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1) ) ) ) * 1.96   #(removed the +1 required by the function, as the length inclides the zero line, an additional 1
             self.volatility.set(round(volatilitymath, 2))
 
             #found volatility from the spreadsheet
