@@ -90,17 +90,21 @@ class Excellerator2():
         # set the math
         # set the RTP
         self.rtp_data = pd.read_excel(self.input_filepath, sheet_name=self.rtp_sheetname, header=0)
+        self.rtp_data.columns = self.rtp_data.columns.str.strip()
         self.vi_data = pd.read_excel(self.input_filepath, sheet_name=self.vi_sheetname, header=0)
+        self.vi_data.columns = self.vi_data.columns.str.strip()
         # this is where the data is pulled from the columns on the rtp sheet
         self.rtp = self.rtp_data[self.rtp_column][0] * 100 ## times 100 so that we have the percentage that matches the data
         self.vi = self.vi_data[self.vi_column][0]
         self.mean_pay = 0
+
         # now calculate mean_pay
-        for idx, line in self.pays_sheet1.iterrows():
-            #print(f"line {line[len(line)-1]}")
-            self.mean_pay += line[0]
-        self.mean_pay = self.mean_pay / len(self.pays_sheet1)
+        #for idx, line in self.pays_sheet1.iterrows():
+        #    #print(f"line {line[len(line)-1]}")
+        #    self.mean_pay += line[0]
+        #self.mean_pay = self.mean_pay / len(self.pays_sheet1)
         #### EXAMINE THIS - DO THE BONUS TABLES ADD INTO THE MEAN AS WELL? MATTERS FOR LATER MATH
+
         if(self.debug_level >= 2):
             print(f"        $!MATH$! Paytable Mean Pay is {self.mean_pay}")        
         # now dynamically build the bonus games
@@ -149,6 +153,7 @@ class Excellerator2():
         #print(f"{spin_sheet}")
         #print(f"{lines_sheet}")
         #print(f"{pays_sheet}")
+        self.bonus_hit_count += 1
         random = rd.randrange(0, int(spin_sheet[-1:]['Upper Range']))
         if(self.debug_level >= 1):
             print(f"   Bonus Spins, random: {random}")      
@@ -183,7 +188,6 @@ class Excellerator2():
         if(self.win_toggle == 1):
             self.adjust_credits(self.round_win)
             self.hit_total += 1
-            self.bonus_hit_count += 1
             self.win_toggle = 0    
             if(self.round_win > self.maximum_liability):
                 self.maximum_liability = self.round_win

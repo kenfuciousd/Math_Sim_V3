@@ -12,4 +12,4 @@ if __name__ == '__main__':
     sim_gui = tkGui()
     sim_gui.mainloop()
 
-    # Note to User: this is what needs to get 'built' / run by python"{:.2f}".format(
+    # Note to User: this is what needs to get 'built' / run by python"{:.2f}".format( 
