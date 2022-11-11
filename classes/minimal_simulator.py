@@ -27,10 +27,11 @@ class Minimal_Simulator():
         last = datetime.now()
         for iteration in range(self.simnum):
             if( iteration%10000 == 0 ):
-                self.tenthousands += 1
                 now = datetime.now()
                 current_time = now.strftime("%H:%M:%S")
-                print(f"Generated {self.tenthousands}0000 records, at {current_time}.  It has been {now-last} since the last message.")
+                if(self.tenthousands != 0):
+                    print(f"Generated {self.tenthousands}0000 records, at {current_time}.  It has been {now-last} since the last message.")
+                self.tenthousands += 1
                 last = now
             if( self.this_bet > float(self.sm.game_credits) ):
                 if(self.sm.infinite_checked == True):

@@ -32,18 +32,19 @@ class Simulator():
             if( iteration%10000 == 0 ):
                 now = datetime.now()
                 current_time = now.strftime("%H:%M:%S")
-                print(f"Generated {self.tenthousands}0000 records, at {current_time}.  It has been {now-last} since the last message.")
+                if(self.tenthousands != 0):
+                    print(f"Generated {self.tenthousands}0000 records, at {current_time}.  It has been {now-last} since the last message.")
                 self.tenthousands += 1
                 last = now
             if( self.this_bet > float(self.sm.game_credits) ):
                 # can't really send back a status to the gui?? 
                 #simgui.slot_check.set("[Reset Slot]")
                 if(self.debug_level >= 2):
-                    print(f"    $$$$ no futher credits, if this is true: {self.sm.infinite_checked} then we should see credits added and spins continue")
+                    print(f"        $$$$ no futher credits, if this is true: {self.sm.infinite_checked} then we should see credits added and spins continue")
                 if(self.sm.infinite_checked == True):
                     self.sm.game_credits += float(self.sm.initial_credits)
-                    if(self.debug_level >= 1):
-                        print(f"    $$$$ adding {self.sm.initial_credits}, credits should now reflect that at: {self.sm.game_credits} ")
+                    if(self.debug_level >= 2):
+                        print(f"        $$$$ adding {self.sm.initial_credits}, credits should now reflect that at: {self.sm.game_credits} ")
                 #if it's not infinite credits mode, then this ends the simulation. 
                 else:    
                     print("!!!! Not enough credits, $" + str(self.this_bet) + " is required.")

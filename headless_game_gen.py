@@ -16,15 +16,18 @@ import math
 
 
 if __name__ == '__main__':
-
+    # you probably want debug at zero, here, in order to generate things quickly. 
     debug_level = 0
     initial_credits = 1000
     machine_credits = 0
-    # simruns = 50000 
-    simruns = 12000000
+    #simruns = 50000 
+    # defaulting at 10 million, change the simulation runs here.
+    simruns = 10000000
+    # this is where the input goes, if you want a different file.
     input_filepath = "./assets/GameFitStrategy.xlsx"
     sim_output_filepath = "./assets/simdata.csv"
     df = pd.DataFrame()
+    # if you want a different bet, this is what you change. 
     bet = float('0.01')
     start_time = time.time()
     print(f"Beginning headless Simulation, generating {simruns} simulations, beginning at {start_time}")

@@ -17,9 +17,9 @@ class tkGui(tk.Tk):
 
     def __init__(self):
         super().__init__()  #the super is a bit unnecessary, as there is nothing to inherit... but leaving it here for reference. 
-        self.debug_level_default = 1
+        self.debug_level_default = 0
         #initial gui settings and layout
-        self.geometry("650x690")
+        self.geometry("650x710")
         self.title("Slot Simulator")
         self.columnconfigure(0, weight = 1)
         self.columnconfigure(1, weight = 1)
@@ -31,7 +31,7 @@ class tkGui(tk.Tk):
         self.bet = StringVar(self, value = "0.01")  ## so I need to set this as a string in order to get a decimal.
         self.slot_ready = False
         self.infinite_checked = BooleanVar(self, value=False)
-        self.mechreel_checked = BooleanVar(self, value=True)
+        #self.mechreel_checked = BooleanVar(self, value=True)
         # .. simulator settings: 
         self.initial_credits = IntVar(self, value = 100)
         self.machine_credits = IntVar(self, value = 0)
@@ -42,11 +42,14 @@ class tkGui(tk.Tk):
         self.payline_number = IntVar(self, value = 0)
         self.payline_totalbet = DoubleVar(self, value = 0 )
         self.status_box = StringVar(self, value = "[Select Input File at 1., or/then Click 2.]")
+        self.start_time = 0
+        self.end_time = 0
         # simulator spins/credits data
         self.df = pd.DataFrame()
         # debug level, a gui element to decide if we want extra output. 
         self.debug_level = IntVar(self, value = self.debug_level_default)
         # dictionary with math, next? 
+        self.hit_total = IntVar(self, value = 0)
         self.hit_freq = IntVar(self, value = 0)
         self.max_liability = IntVar(self, value = 0)        
         self.volatility = DoubleVar(self, value = 0)
@@ -148,55 +151,14 @@ class tkGui(tk.Tk):
         #print("buttonpress")
         self.status_box.set("[Run Simulator Button Pressed, Running.]")        
         if(self.slot_ready == True):
-            start_time = time.time()
+            self.start_time = time.time()
             self.sim = Simulator(self.sm, self.simruns.get(), self.debug_level.get())   # simulator call 
             self.df = pd.DataFrame(self.sim.win_list)   #, columns=['Credits'])  # pull the saved simulator dat
-           
-            #print(f" So here is what is returned from the SIM: \n {str(self.df)}")
-            ######math goes here for output
-            if(self.debug_level.get() >= 2):
-                print(f"        hit info for math, total hits {self.sm.hit_total} and simulator runs: {self.simruns.get()}")
-            hfe = ( self.sm.hit_total / self.simruns.get() )  * 100   #### is this needed? it's used in the templates file... 
-            self.hit_freq.set(str(round(hfe, 2))+"%")
-            ml = self.sm.maximum_liability
-            self.max_liability.set("$"+str(round(ml, 2)))
-            
-            #### volatility goes here. ### 
-            if(self.debug_level.get() >= 1):
-                #print(f"    ^^^^ the volatility math: {self.sm.summation} / {self.simruns.get() * (len(self.sm.paytable) + 1)} = {self.sm.summation/(self.simruns.get() * (len(self.sm.paytable) + 1))}.. sqrt is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ))}, and so with * 1.96 the volatility index is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) )) * 1.96} ")
-                print(f"    ^^^^ the volatility math: {self.sm.summation} / {self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1)} = {self.sm.summation/(self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1))}.. sqrt is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1) ))}, and so with * 1.96 the volatility index is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1) )) * 1.96} ")
-            #volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ) ) * 1.96
-            volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1) ) ) ) * 1.96   #(removed the +1 required by the function, as the length inclides the zero line, an additional 1
-            self.volatility.set(round(volatilitymath, 2))
-            #found volatility from the spreadsheet
-            ##### uncomment if we use volatility from the sheet ######
-            #####self.found_volatility.set( round(self.sm.vi, 2) )
-            try:
-                self.found_volatility.set(round(self.sm.vi, 2))
-            except NameError:
-                self.found_volatility.set("N/A")
-
-            # RTP
-            if(self.debug_level.get() >= 1):
-                print(f"    $$$$ RTP is {self.sm.total_won} / {self.sm.total_bet} = {(self.sm.total_won / self.sm.total_bet)} ")
-            self.return_to_player.set("{:.2f}".format(self.sm.total_won / self.sm.total_bet * 100)+"%")
-            # found rtp from the spreadsheet
-            self.found_return_to_player.set( str(round(self.sm.rtp, 2) ) + "%" ) 
-
-            # finally, record / print our final values as a status
-            if(self.debug_level.get() >= 1):
-                print(f"Final values, at spin {self.sim.spins[len(self.sim.spins)-1]}, the final credit value was {self.sim.incremental_credits[len(self.sim.incremental_credits)-1]}" )
-
             # set the machine credits after each run
             self.machine_credits.set(self.sm.return_credits())
-            end_time = time.time()
-            run_time = np.round(end_time - start_time, 2) 
-            mrt = np.round(run_time / 60 ,2) 
-            bhp = np.round(self.sm.bonus_hit_count / self.sim.spins[len(self.sim.spins)-1], 4) 
-            self.bonus_hit_count.set( str(self.sm.bonus_hit_count) )
-            self.bonus_hit_percentage.set( str(bhp) + "%")
+            # most of the math scattered through this function has been moved
+            self.do_the_math()
             self.status_box.set("[3. Done - Click 2 to Rebuild Slot, or Reload Credits]") # setting status 
-            print(f"Simulation Complete, total run time in seconds: {run_time}, approximately {mrt} minutes, played {self.sim.spins[-1]} spins.")
         else:
             self.status_box.set("[->2. Click 2 to Build or reload]")
             #print("->1. Slot needs to be loaded first.")
@@ -209,12 +171,56 @@ class tkGui(tk.Tk):
     def plot_rtp_button_clicked(self):
         self.sim.plot_rtp_result()
 
+    def do_the_math(self):
+        """ Moving the math here - this fills out the bottom portion of the gui """
+        #print(f" So here is what is returned from the SIM: \n {str(self.df)}")
+        ######math goes here for output
+        if(self.debug_level.get() >= 2):
+            print(f"        hit info for math, total hits {self.sm.hit_total} and simulator runs: {self.simruns.get()}")
+        hfe = ( self.sm.hit_total / self.simruns.get() )  * 100   #### is this needed? it's used in the templates file... 
+        self.hit_freq.set(str(round(hfe, 2))+"%")
+        ml = self.sm.maximum_liability
+        self.max_liability.set("$"+str(round(ml, 2)))
+        
+        #### volatility goes here. ### 
+        if(self.debug_level.get() >= 1):
+            #print(f"    ^^^^ the volatility math: {self.sm.summation} / {self.simruns.get() * (len(self.sm.paytable) + 1)} = {self.sm.summation/(self.simruns.get() * (len(self.sm.paytable) + 1))}.. sqrt is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ))}, and so with * 1.96 the volatility index is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) )) * 1.96} ")
+            print(f"    ^^^^ the volatility math: {self.sm.summation} / {self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1)} = {self.sm.summation/(self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1))}.. sqrt is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1) ))}, and so with * 1.96 the volatility index is {math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1)-1 + 1) )) * 1.96} ")
+        #volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.paytable) + 1) ) ) * 1.96
+        volatilitymath = math.sqrt( self.sm.summation / (self.simruns.get() * (len(self.sm.lines_sheet1) ) ) ) * 1.96   #(removed the +1 required by the function, as the length inclides the zero line, an additional 1
+        self.volatility.set(round(volatilitymath, 2))
+        #found volatility from the spreadsheet
+        try:
+            self.found_volatility.set(round(self.sm.vi, 2))
+        except NameError:
+            self.found_volatility.set("N/A")
+
+        # RTP
+        if(self.debug_level.get() >= 1):
+            print(f"    $$$$ RTP is {self.sm.total_won} / {self.sm.total_bet} = {(self.sm.total_won / self.sm.total_bet)} ")
+        self.return_to_player.set("{:.2f}".format(self.sm.total_won / self.sm.total_bet * 100)+"%")
+        # found rtp from the spreadsheet
+        self.found_return_to_player.set( str(round(self.sm.rtp, 2) ) + "%" ) 
+
+        # finally, record / print our final values as a status
+        if(self.debug_level.get() >= 1):
+            print(f"Final values, at spin {self.sim.spins[len(self.sim.spins)-1]}, the final credit value was {self.sim.incremental_credits[len(self.sim.incremental_credits)-1]}" )
+
+        self.end_time = time.time()
+        run_time = np.round(self.end_time - self.start_time, 2) 
+        mrt = np.round(run_time / 60 , 2) 
+        bhp = np.round(self.sm.bonus_hit_count / self.sim.spins[len(self.sim.spins)-1], 4) 
+        self.hit_total.set(self.sm.hit_total)
+        self.bonus_hit_count.set( str(self.sm.bonus_hit_count) )
+        self.bonus_hit_percentage.set( str(bhp) + "%")
+        print(f"Simulation Complete, total run time in seconds: {run_time}, approximately {mrt} minutes, played {self.sim.spins[-1]} spins.")
+
     def create_gui(self):
         # UI element values
         gui_row_iteration = 0
         #self.input_filepath = StringVar(self, value = '/Users/jdyer/Documents/GitHub/JD-Programming-examples/Python/math_slot_simulator/PARishSheets.xlsx')
         self.label_plot = tk.Label(self, text="1. Select Input File ")
-        self.label_plot.grid(row = gui_row_iteration, column = 0, columnspan = 3, sticky=W, padx=15)
+        self.label_plot.grid(row = gui_row_iteration, column = 0, columnspan = 3, sticky=W, padx=15, pady=5)
         gui_row_iteration += 1
         self.input_label_filepath = tk.Label(self, text="Input Filepath ")
         self.input_label_filepath.grid(row = gui_row_iteration, column = 0, sticky=E)
@@ -350,9 +356,13 @@ class tkGui(tk.Tk):
         # Hit frequency (hits / spins)
         self.label_hit_freq = tk.Label(self, text="Hit Frequency ")
         self.label_hit_freq.grid(row = gui_row_iteration, column = 0,  sticky=E, pady=15)
-        self.hit_freq_entry = ttk.Entry(self, width = 8, textvariable = self.hit_freq, state='readonly')
-        self.hit_freq_entry.grid(row = gui_row_iteration, column = 1)
-        #gui_row_iteration += 1
+        self.hit_freq_freq = ttk.Entry(self, width = 8, textvariable = self.hit_freq, state='readonly')
+        self.hit_freq_freq.grid(row = gui_row_iteration, column = 1)
+        self.label_hit_total = tk.Label(self, text="Hit Total ")
+        self.label_hit_total.grid(row = gui_row_iteration, column = 2,  sticky=E)
+        self.hit_total_entry = ttk.Entry(self, width = 8, textvariable = self.hit_total, state='readonly')
+        self.hit_total_entry.grid(row = gui_row_iteration, column = 3)
+        gui_row_iteration += 1
         # Max Liability (biggest win)
         self.label_max_liability = tk.Label(self, text="Max Liability ")
         self.label_max_liability.grid(row = gui_row_iteration, column = 2, sticky=E)

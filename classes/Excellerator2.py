@@ -20,9 +20,9 @@ class Excellerator2():
         #self.settings_sheetname = 'Settings"'
         #self.excel_file = pd.ExcelFile(self.input_filepath)
         #self.eset_df = excel_file.parse(self.settings_sheetname, index_col = 0)
-        if(self.debug_level >= 3):
-            for idx, item in eset_df.iterrows():
-               print(f"index: '{idx}' and \n row '{item['value']}' .. \n")
+        #if(self.debug_level >= 3):
+        #    for idx, item in eset_df.iterrows():
+        #       print(f"index: '{idx}' and \n row '{item['value']}' .. \n")
 
         # this section is to define where we get our theoretical/pre-calculated values from.. 
         self.rtp_sheetname = 'Math Values'   # it doesn't like 'Ways/Pays' in excel
@@ -73,7 +73,7 @@ class Excellerator2():
     def load_excel(self):
         """ takes in the excel file, and performs the setup logic""" 
         excel_file = pd.ExcelFile(self.input_filepath)
-        if(self.debug_level >= 1):
+        if(self.debug_level >= 2):
             print(f"Loading Excel sheet, found: {excel_file.sheet_names}")
         sheet_count = 0
         self.spin_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)
@@ -98,13 +98,6 @@ class Excellerator2():
         self.vi = self.vi_data[self.vi_column][0]
         self.mean_pay = 0
 
-        # now calculate mean_pay
-        #for idx, line in self.pays_sheet1.iterrows():
-        #    #print(f"line {line[len(line)-1]}")
-        #    self.mean_pay += line[0]
-        #self.mean_pay = self.mean_pay / len(self.pays_sheet1)
-        #### EXAMINE THIS - DO THE BONUS TABLES ADD INTO THE MEAN AS WELL? MATTERS FOR LATER MATH
-
         if(self.debug_level >= 2):
             print(f"        $!MATH$! Paytable Mean Pay is {self.mean_pay}")        
         # now dynamically build the bonus games
@@ -127,6 +120,24 @@ class Excellerator2():
             #exec("print(f'{pays_sheet%d}')" % i)
             sheet_count += 1
 
+        # now calculate mean_pay
+        total_mean_pays = 0
+        total_mean_lines = 0
+        pays_sheet = []
+        for i in range(1, games_total+1):
+            exec("pays_sheet.append(self.pays_sheet%d) " % i)
+            #exec("print(f'i = {i}, ps = {self.pays_sheet%d}')" % i)
+            for j, line in pays_sheet[0].iterrows():
+                #print(f"line {line[len(line)-1]}")
+                total_mean_pays += line[0]
+                total_mean_lines += 1
+        self.mean_pay = total_mean_pays / total_mean_lines
+        if(self.debug_level >= 2):
+            print(f"    #### mean pay {self.mean_pay} = pays {total_mean_pays} / lines {total_mean_lines}")
+        #self.mean_pay = self.mean_pay / len(self.pays_sheet1)
+        #### EXAMINE THIS - DO THE BONUS TABLES ADD INTO THE MEAN AS WELL? MATTERS FOR LATER MATH
+
+
     def adjust_credits(self,value):
         # bets should be negative values, wins or deposits positive
         # for totals tracked
@@ -135,7 +146,7 @@ class Excellerator2():
             if(self.debug_level >= 2):
                 print(f"                     STATUS: total_won is: {self.total_won}")
         elif(value < 0):
-            # negative to offset the negative value of the bet itself. 
+            # the negative value of the bet itself. 
             self.total_bet -= value
             if(self.debug_level >= 2):
                 print(f"                     STATUS: total_bet is: {self.total_bet}")
@@ -154,12 +165,15 @@ class Excellerator2():
         #print(f"{lines_sheet}")
         #print(f"{pays_sheet}")
         self.bonus_hit_count += 1
-        random = rd.randrange(0, int(spin_sheet[-1:]['Upper Range']))
+        try: 
+            random = rd.randrange(0, int(spin_sheet[-1:]['Upper Range']))
+        except:
+            random = 0
         if(self.debug_level >= 1):
             print(f"   Bonus Spins, random: {random}")      
         for s, srow in spin_sheet.iterrows():
             #print(f" -- spin check in bonus: checking row {s} with info {srow}")
-            if(random >= srow["Lower Range"] and random <= srow["Upper Range"]):
+            if((random >= srow["Lower Range"] and random <= srow["Upper Range"]) or len(spin_sheet) == 1):
                 spins = int(srow[0])
                 if(self.debug_level >= 1):
                     print(f"      Found {spins} Bonus spins")
@@ -170,7 +184,7 @@ class Excellerator2():
                             print(f"      Bonus Lines: at spin {j} random: {random}")
                         for l, lrow in lines_sheet.iterrows():
                           #print(f" -- lines check in bonus: checking {l} with info {lrow}")
-                            if(random >= lrow["Lower Range"] and random <= lrow["Upper Range"]):
+                            if((random >= lrow["Lower Range"] and random <= lrow["Upper Range"]) or len(lines_sheet) == 1):
                                 if(self.debug_level >= 1):
                                     print(f"         Bonus Chose {lrow[0]} Line Wins")
                                 if(lrow[0] > 0):
@@ -188,6 +202,8 @@ class Excellerator2():
         if(self.win_toggle == 1):
             self.adjust_credits(self.round_win)
             self.hit_total += 1
+            if(self.debug_level >= 1):
+                print(f" [H]found a hit! hit total now: {self.hit_total}")
             self.win_toggle = 0    
             if(self.round_win > self.maximum_liability):
                 self.maximum_liability = self.round_win
@@ -214,13 +230,13 @@ class Excellerator2():
                 if(self.debug_level >= 1):
                     print(f"   Found {random} is between {row['Lower Range']} and {row['Upper Range']}")
                 if(i == 0):
-                    # if there are more than 0 spins, go: 
                     if(self.debug_level >= 1):
                         print(f"Playing Main Game")
                     random = rd.randrange(0, int(self.lines_sheet1[-1:]['Upper Range']))
                     if(self.debug_level >= 1):
                         print(f"   Main Game Lines: randomly chosen, for the lines: {random}")
                     #loop through the pay lines sheet
+
                     for l, lrow in self.lines_sheet1.iterrows():
                         if(random >= lrow["Lower Range"] and random <= lrow["Upper Range"]):
                             if(self.debug_level >= 1):
@@ -257,12 +273,14 @@ class Excellerator2():
         if(self.win_toggle == 1):
             self.adjust_credits(self.round_win)
             self.hit_total += 1
+            if(self.debug_level >= 1):
+                print(f" [H]found a hit! hit total now: {self.hit_total}")            
             self.win_toggle = 0    
             if(self.round_win > self.maximum_liability):
                 self.maximum_liability = self.round_win
             # reminder to check mean_pay - do we sum the bonus tables too? 
-            self.summation += (self.mean_pay - self.round_win ) ** 2
             if(self.debug_level >= 2):
                 print(f"    +=+=+=+= summation is now {self.summation}, which added: ({self.mean_pay} minus {self.round_win}) squared. ")
+        self.summation += (self.mean_pay - self.round_win ) ** 2
     # end of play_game
 #end class Excellerator2
