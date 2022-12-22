@@ -25,7 +25,7 @@ if __name__ == '__main__':
     simruns = 10000000
     # this is where the input goes, if you want a different file.
     input_filepath = "./assets/GameFitStrategy.xlsx"
-    sim_output_filepath = "./assets/simdata.csv"
+    sim_output_filepath = "./assets/simdata.txt"
     df = pd.DataFrame()
     # if you want a different bet, this is what you change. 
     bet = float('0.01')

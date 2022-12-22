@@ -91,6 +91,7 @@ class Minimal_Excellerator():
         sheet_count += 1
         # set the math
         # set the RTP
+
         self.rtp_data = pd.read_excel(self.input_filepath, sheet_name=self.rtp_sheetname, header=0)
         self.rtp_data.columns = self.rtp_data.columns.str.strip()
         self.vi_data = pd.read_excel(self.input_filepath, sheet_name=self.vi_sheetname, header=0)
@@ -109,17 +110,17 @@ class Minimal_Excellerator():
             exec("self.spin_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)" % i)
             exec("self.spin_sheet%d.columns = self.spin_sheet%d.columns.str.strip()" % (i, i))
             #print(f'SPIN SHEET {i}:')
-            #exec("print(f'{spin_sheet%d}')" % i)
+            #exec("print(f'{self.spin_sheet%d}')" % i)
             sheet_count += 1
             exec("self.lines_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)" % i)
             exec("self.lines_sheet%d.columns = self.lines_sheet%d.columns.str.strip()" % (i, i))
             #print(f"LINES SHEET {i}:")
-            #exec("print(f'{lines_sheet%d}')" % i)
+            #exec("print(f'{self.lines_sheet%d}')" % i)
             sheet_count += 1
-            exec("self.pays_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=self.columns, header=0)" % i)
+            exec("self.pays_sheet%d = excel_file.parse(sheet_name=sheet_count, header=0, usecols=self.columns)" % i)
             exec("self.pays_sheet%d.columns = self.pays_sheet%d.columns.str.strip()" % (i, i))
             #print(f"PAYS SHEET {i}:")
-            #exec("print(f'{pays_sheet%d}')" % i)
+            #exec("print(f'{self.pays_sheet%d}')" % i)
             sheet_count += 1
 
         # now calculate mean_pay
@@ -130,9 +131,10 @@ class Minimal_Excellerator():
             exec("pays_sheet.append(self.pays_sheet%d) " % i)
             #exec("print(f'i = {i}, ps = {self.pays_sheet%d}')" % i)
             for j, line in pays_sheet[0].iterrows():
-                #print(f"line {line[len(line)-1]}")
-                total_mean_pays += line[0]
-                total_mean_lines += 1
+                if(str(line[len(line)-1]) != "Upper Range"):  # probably not necessary, assuming the sheet is formatted correctly.
+                    #print(f"line {line[len(line)-1]}")
+                    total_mean_pays += line[0]
+                    total_mean_lines += 1
         self.mean_pay = total_mean_pays / total_mean_lines
         if(self.debug_level >= 2):
             print(f"    #### mean pay {self.mean_pay} = pays {total_mean_pays} / lines {total_mean_lines}")

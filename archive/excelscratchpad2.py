@@ -16,40 +16,43 @@ excel_file = pd.ExcelFile(input_filepath)
 ###skipfooter=0, convert_float=None, mangle_dupe_cols=True, **kwds)
 
 # parse the first sheet
-#excel.sheet_names   # to see the sheet names 
+print(f"Found Sheets {excel_file.sheet_names}")   # to see the sheet names 
 ## this is a 'full game' - in that it needs all three sheets to function. 
 sheet_count = 0
-spin_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=columns)
+spin_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=columns, header=0)
 spin_sheet1.columns = spin_sheet1.columns.str.strip()
 sheet_count += 1
 games_total = len(spin_sheet1)  # this is how many bonus games we have
+print(f'{spin_sheet1} \nand we found {games_total} games, total')
 #print(f"found {games_total} total games!")
-lines_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=columns)
+lines_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=columns, header=0)
 lines_sheet1.columns = lines_sheet1.columns.str.strip()
 sheet_count += 1
-pays_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=columns)
+print(f'{lines_sheet1}')
+pays_sheet1 = excel_file.parse(sheet_name=sheet_count, usecols=columns, header=0)
 pays_sheet1.columns = pays_sheet1.columns.str.strip()
 sheet_count += 1
+print(f'{pays_sheet1}')
 
 # load a dynamic 'Tables' dataframe/dictionary(?) based on each set of 3 tables: spins, lines, pays
 #bonus games counted by rows, (starts counting at 0, hence the b_g_t+1, and we are starting at 2 to skip the first 'main' row.)
 # dynamically named, for the row number. so bonus_spin_sheet1, bonus_lines_sheet2, etc
 for i in range(2, games_total+1):
    print(f"Loading Bonus Game sheet {i} at sheet_count {sheet_count}")
-   exec("spin_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=columns)" % i)
+   exec("spin_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=columns, header=0)" % i)
    exec("spin_sheet%d.columns = spin_sheet%d.columns.str.strip()" % (i, i))
    #print(f'SPIN SHEET {i}:')
-   #exec("print(f'{spin_sheet%d}')" % i)
+   exec("print(f'{spin_sheet%d}')" % i)
    sheet_count += 1
-   exec("lines_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=columns)" % i)
+   exec("lines_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=columns, header=0)" % i)
    exec("lines_sheet%d.columns = lines_sheet%d.columns.str.strip()" % (i, i))
    #print(f"LINES SHEET {i}:")
-   #exec("print(f'{lines_sheet%d}')" % i)
+   exec("print(f'{lines_sheet%d}')" % i)
    sheet_count += 1
-   exec("pays_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=columns)" % i)
+   exec("pays_sheet%d = excel_file.parse(sheet_name=sheet_count, usecols=columns, header=0)" % i)
    exec("pays_sheet%d.columns = pays_sheet%d.columns.str.strip()" % (i, i))
    #print(f"PAYS SHEET {i}:")
-   #exec("print(f'{pays_sheet%d}')" % i)
+   exec("print(f'{pays_sheet%d}')" % i)
    sheet_count += 1
 
 

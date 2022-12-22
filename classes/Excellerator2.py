@@ -28,7 +28,7 @@ class Excellerator2():
         self.rtp_sheetname = 'Math Values'   # it doesn't like 'Ways/Pays' in excel
         self.vi_sheetname = 'Math Values'
         self.rtp_column = 'RTP'
-        self.vi_column = 'Volatility'
+        self.vi_column = 'Volatility Index'
         #self.columns = ['Win Lines', 'Weight', 'Lower Range', 'Upper Range']
         self.columns="A:D"  # the above column names.
 
@@ -196,7 +196,7 @@ class Excellerator2():
                                             if(random >= bwrow["Lower Range"] and random <= bwrow["Upper Range"]):
                                                 if(self.debug_level >= 1):
                                                     print(f"               Bonus Winner! would add {bwrow[0]} to the total, found between {bwrow['Lower Range']} and {bwrow['Upper Range']}")
-                                                self.this_win = bwrow[0] * self.bet_per_line 
+                                                self.this_win = bwrow[0] * self.bet_per_line #* .01 # (in pennies)
                                                 self.round_win += self.this_win
                                                 self.win_toggle = 1 
         if(self.win_toggle == 1):
@@ -248,14 +248,15 @@ class Excellerator2():
                                     if(self.debug_level >= 1):
                                         print(f"      Main Game Win: randomly chosen, for the wins: {random}")
                                     for w, wrow in self.pays_sheet1.iterrows():
-                                        # figure out what the payout is by looping through the win table
-                                        if(random >= wrow["Lower Range"] and random <= wrow["Upper Range"]):
-                                            if(self.debug_level >= 1):
-                                                print(f"         Winning Line! would add {wrow[0]} to the total, found between {wrow['Lower Range']} and {wrow['Upper Range']}")
-                                            # win logic goes here
-                                            self.this_win = wrow[0] * self.bet_per_line 
-                                            self.round_win += self.this_win
-                                            self.win_toggle = 1                                            
+                                        if(wrow[0] > 0):
+                                            # figure out what the payout is by looping through the win table
+                                            if(random >= wrow["Lower Range"] and random <= wrow["Upper Range"]):
+                                                if(self.debug_level >= 1):
+                                                    print(f"         Winning Line! would add {wrow[0]} to the total, found between {wrow['Lower Range']} and {wrow['Upper Range']}")
+                                                # win logic goes here
+                                                self.this_win = wrow[0] * .01 # (in pennies) #* self.bet_per_line #
+                                                self.round_win += self.this_win
+                                                self.win_toggle = 1 
                 else:
                     sn = i+1
                     if(self.debug_level >= 1):
